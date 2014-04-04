@@ -21,6 +21,7 @@ cd kgraft && git checkout kgraft
 mkdir ../obj
 cp /boot/config-`uname -r` dot.config
 cp dot.config ../obj/.config
+make "O=../obj/" menuconfig
 make "O=../obj/" bzImage modules
 cp arch/x86_64/boot/bzImage /boot/vmlinuz-$MYVERSION
 cp System.map /boot/System.map-$MYVERSION
