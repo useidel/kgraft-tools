@@ -5,7 +5,7 @@ cd kgraft && git checkout kgraft
 cd ..
 git clone git://sourceware.org/git/binutils.git
 cd binutils
-patch -p1 ../kgraft/tools/kgraft/objcopy.diff
+patch -p1 < ../kgraft/tools/kgraft/objcopy.diff
 ./configure
 make
 cd ..
@@ -54,3 +54,5 @@ cd ../obj/
 # in our case it is uptime_proc_show
 ./source/tools/kgraft/create-kgrmodule.sh uptime_proc_show
 
+# once the module is loaded you need to 'poke' the kernel a bit
+for i in `dmesg |grep 'still in kernel after timeout' | awk '{print $4}' |sort -u`; do kill -USR1 $i; done
