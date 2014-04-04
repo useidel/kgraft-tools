@@ -1,0 +1,56 @@
+# Tools to create your own kGraft modules
+#
+git clone https://git.kernel.org/pub/scm/linux/kernel/git/jirislaby/kgraft.git
+cd kgraft && git checkout kgraft
+cd ..
+git clone git://sourceware.org/git/binutils.git
+cd binutils
+patch -p1 ../kgraft/tools/kgraft/objcopy.diff
+./configure
+make
+cd ..
+cp binutils/binutils/objcopy kgraft/tools/kgraft/objcopy-hacked
+perl -pi -e 's/exit.*//g' kgraft/tools/kgraft/Makefile
+cd kgraft/tools/kgraft/
+make && make check
+
+# To create your kGraft enabled kernel
+# MYVERSION=3.14.0-rc8-next-20140331-7-default+
+git clone https://git.kernel.org/pub/scm/linux/kernel/git/jirislaby/kgraft.git
+cd kgraft && git checkout kgraft
+mkdir ../obj
+cp /boot/config-`uname -r` dot.config
+cp dot.config ../obj/.config
+make "O=../obj/" bzImage modules
+cp arch/x86_64/boot/bzImage /boot/vmlinuz-$MYVERSION
+cp System.map /boot/System.map-$MYVERSION
+make "O=../obj/" modules_install
+mkinitrd -k vmlinuz-$MYVERSION -i initrd-$MYVERSION
+# integrate in boot-loader and boot
+
+# Create your own kGraft module
+# change into build directory of your previously build kGraft enabled kernel
+# patch the sources as needed
+# here we add a short message if /proc/uptime is displayed
+cat <<EOF > uptime.patch
+--- a/fs/proc/uptime.c  2014-04-04 15:32:51.550550150 +0200
++++ b/fs/proc/uptime.c  2014-04-04 15:33:35.268645579 +0200
+@@ -24,6 +24,7 @@
+        nsec = cputime64_to_jiffies64(idletime) * TICK_NSEC;
+        idle.tv_sec = div_u64_rem(nsec, NSEC_PER_SEC, &rem);
+        idle.tv_nsec = rem;
++       printk(" Guckst Du: ");
+        seq_printf(m, "%lu.%02lu %lu.%02lu\n",
+                        (unsigned long) uptime.tv_sec,
+                        (uptime.tv_nsec / (NSEC_PER_SEC / 100)),
+EOF
+# recompile it 
+KCFLAGS="-ffunction-sections -fdata-sections" make "O=../obj/" 2>&1 | tee -a build.patched.log
+cd ../obj/
+# now create the kGraft module using the helper scripts
+# you need to know symbols have been impacted by your change
+# grep for CC in build.patched.log and ignore init.o and version.o
+# and do an nm or readelf on the newly compiled objects
+# in our case it is uptime_proc_show
+./source/tools/kgraft/create-kgrmodule.sh uptime_proc_show
+
