@@ -1,0 +1,15 @@
+--- a/kernel/Kconfig.kgr	2014-04-06 16:33:46.056724472 +0200
++++ b/kernel/Kconfig.kgr	2014-04-06 16:33:53.562372936 +0200
+@@ -3,8 +3,12 @@
+ 	depends on HAVE_MCOUNT_RECORD
+ 	select MCOUNT_RECORD
+ 	select MCOUNT_RECORD_LIB
++	help
++	 Select this to enable kGraft online kernel patching
+ 
+ config KGR_PATCHER
+ 	tristate "Kgr patcher"
+ 	depends on m && KGR
++	help
++	 Sample code to replace sys_iopl() and capable() via kGraft
+ 
