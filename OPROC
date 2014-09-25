@@ -27,8 +27,16 @@ cp ../obj/arch/x86_64/boot/bzImage /boot/vmlinuz-$MYVERSION
 cp ../obj/System.map /boot/System.map-$MYVERSION
 cp ../obj/.config /boot/config-$MYVERSION
 make "O=../obj/" modules_install
-mkinitrd -k vmlinuz-$MYVERSION -i initrd-$MYVERSION
-# integrate in boot-loader and boot
+# for old style initrd
+  mkinitrd /boot/initrd-$MYVERSION $MYVERSION 
+  # OR
+  mkinitrd -k vmlinuz-$MYVERSION -i initrd-$MYVERSION 
+# for dracut/initramfs
+  dracut /boot/initramfs-$MYVERSION.img $MYVERSION
+# integrate in boot-loader and boot, e.g.
+new-kernel-pkg --initrdfile=/boot/initramfs-$MYVERSION.img --install $MYVERSION
+# OR
+kernel-install add $MYVERSION /boot/vmlinuz-$MYVERSION
 
 # Create your own kGraft module
 # change into build directory of your previously build kGraft enabled kernel
