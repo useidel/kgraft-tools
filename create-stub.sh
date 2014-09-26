@@ -1,15 +1,25 @@
 #!/bin/bash
 
+PATH=/bin:/usr/bin:/usr/local/bin
+export PATH
+
 if test -z "$1"; then
     echo "usage: $0 [list of symbols]"
 fi
 
 cat <<EOF
+/*
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ */
+
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
-#include <linux/kgr.h>
-#include <linux/kallsyms.h>
+#include <linux/kgraft.h>
 #include <linux/sched.h>
 #include <linux/types.h>
 #include <linux/capability.h>
@@ -18,36 +28,45 @@ cat <<EOF
 EOF
 
 for i in $@; do
-    echo "extern void new_$i (void);"
-    echo "KGR_PATCHED_FUNCTION(patch, $i, new_$i);"
+	echo 
+	echo "/* "
+	echo " * Place your changed function here "
+	echo " * The name should kgr_new_$i "
+	echo " */ "
+	echo 
 done
-
-echo "static const struct kgr_patch patch = {"
-echo "	.patches = {"
-for i in $@; do
-    echo "		KGR_PATCH($i),"
-done
-echo "		KGR_PATCH_END"
-echo "	}"
-echo "};"
 
 cat <<EOF
+
+static struct kgr_patch patch = {
+        .name = "my_sample_patcher",
+        .owner = THIS_MODULE,
+        .patches = {
+EOF
+
+
+for i in $@; do
+    echo "		KGR_PATCH($i, kgr_new_$i, true),"
+done
+
+cat <<EOF
+                KGR_PATCH_END
+        }
+};
+
 static int __init kgr_patcher_init(void)
 {
-        /* removing not supported (yet?) */
-        __module_get(THIS_MODULE);
-        /* +4 to skip push rbb / mov rsp,rbp prologue */
-        kgr_start_patching(&patch);
-        return 0;
+        return kgr_patch_kernel(&patch);
 }
 
 static void __exit kgr_patcher_cleanup(void)
 {
-        printk(KERN_ERR "removing now buggy!\n");
+        kgr_patch_remove(&patch);
 }
 
 module_init(kgr_patcher_init);
 module_exit(kgr_patcher_cleanup);
 
 MODULE_LICENSE("GPL");
+
 EOF
