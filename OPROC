@@ -5,19 +5,22 @@ cd kgraft && git checkout kgraft
 cd ..
 git clone git://sourceware.org/git/binutils.git
 cd binutils
-patch -p1 < ../kgraft/tools/kgraft/objcopy.diff
+patch -p1 < /path/to/objcopy.diff
 ./configure
 make
 cd ..
 cp binutils/binutils/objcopy kgraft/tools/kgraft/objcopy-hacked
-perl -pi -e 's/exit.*//g' kgraft/tools/kgraft/Makefile
-cd kgraft/tools/kgraft/
-make && make check
 
 # To create your kGraft enabled kernel
-# MYVERSION=3.14.0-rc8-next-20140331-7-default+
+# MYVERSION=3.17.0-rc4+
 git clone https://git.kernel.org/pub/scm/linux/kernel/git/jirislaby/kgraft.git
 cd kgraft && git checkout kgraft
+# The tools directory kgraft has gone in the recent 
+# versions of this fork ... we re-create for our needs
+mkdir -p tools/kgraft
+# and populate it with our tools
+cp create-kgrmodule.sh  create-stub.sh  extract-syms.sh objcopy.diff tools/kgraft
+# We will use this directory to store the object files ... is cleaner
 mkdir ../obj
 cp /boot/config-`uname -r` dot.config
 cp dot.config ../obj/.config
@@ -60,9 +63,21 @@ cd ../obj/
 # now create the kGraft module using the helper scripts
 # you need to know symbols have been impacted by your change
 # grep for CC in build.patched.log and ignore init.o and version.o
+# !!!
+# !!! To be checked ... last tests have shown too much information here ..!!!
+# !!!
 # and do an nm or readelf on the newly compiled objects
 # in our case it is uptime_proc_show
-./source/tools/kgraft/create-kgrmodule.sh uptime_proc_show
+../kgraft/tools/kgraft/create-kgrmodule.sh uptime_proc_show
+
+# This does not create a fully working module ... you will have to 
+# add your adapted functions ... use the samples/kgraft/kgr_patcher.c file as template
+# Once done ... just compile it again
+cd kgrafttmp
+make
+
+# Load the (hopefully) created kernel module
+insmod kgrmodule.ko
 
 # once the module is loaded you need to 'poke' the kernel a bit
 for i in `dmesg |grep 'still in kernel after timeout' | awk '{print $4}' |sort -u`; do kill -USR1 $i; done
