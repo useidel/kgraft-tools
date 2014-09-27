@@ -12,7 +12,9 @@ fi
 rm -f symlist symlist.rename extracted.o
 for i in $@; do
     echo $i >> symlist
-    echo $i new_$i >> symlist.rename
+    echo $i kgr_new_$i >> symlist.rename
 done
+
 $TOOLPATH/objcopy-hacked --strip-unneeded -j .doesntexist. --keep-symbols symlist --redefine-syms symlist.rename vmlinux.o extracted.o
+
 nm extracted.o
