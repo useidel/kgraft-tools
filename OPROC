@@ -24,6 +24,11 @@ cp create-kgrmodule.sh  create-stub.sh  extract-syms.sh objcopy.diff tools/kgraf
 mkdir ../obj
 cp /boot/config-`uname -r` dot.config
 cp dot.config ../obj/.config
+# open question ... planning ahead we should set
+# KCFLAGS="-ffunction-sections -fdata-sections" for the compilation
+# this would ease the patch module creation later ... but I don't know
+# if this would have an undesired impact to the running kernel ...
+# ...
 make "O=../obj/" menuconfig
 make "O=../obj/" bzImage modules
 cp ../obj/arch/x86_64/boot/bzImage /boot/vmlinuz-$MYVERSION
@@ -42,6 +47,10 @@ new-kernel-pkg --initrdfile=/boot/initramfs-$MYVERSION.img --install $MYVERSION
 kernel-install add $MYVERSION /boot/vmlinuz-$MYVERSION
 
 # Create your own kGraft module
+# If the KCFLAGS="-ffunction-sections -fdata-sections" was not set for the initial
+# build ... the kernel must be rebuild with these flags
+KCFLAGS="-ffunction-sections -fdata-sections" make "O=../obj/" bzImage modules
+
 # change into build directory of your previously build kGraft enabled kernel
 # patch the sources as needed
 # here we add a short message if /proc/uptime is displayed
@@ -63,9 +72,6 @@ cd ../obj/
 # now create the kGraft module using the helper scripts
 # you need to know symbols have been impacted by your change
 # grep for CC in build.patched.log and ignore init.o and version.o
-# !!!
-# !!! To be checked ... last tests have shown too much information here ..!!!
-# !!!
 # and do an nm or readelf on the newly compiled objects
 # in our case it is uptime_proc_show
 ../kgraft/tools/kgraft/create-kgrmodule.sh uptime_proc_show
