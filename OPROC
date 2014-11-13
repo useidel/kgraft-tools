@@ -23,7 +23,11 @@ cp binutils/binutils/objcopy kgraft/tools/kgraft/objcopy-hacked
 #mkdir -p tools/kgraft
 #
 # and populate it with our tools
-cp create-kgrmodule.sh  create-stub.sh  extract-syms.sh objcopy.diff tools/kgraft
+cd ..
+git clone https://github.com/useidel/kgraft-tools
+cd kgraft-tools
+cp create-kgrmodule.sh  create-stub.sh  extract-syms.sh objcopy.diff ../kgraft/tools/kgraft
+cd ../kgraft
 # We will use this directory to store the object files ... is cleaner
 mkdir ../obj
 cp /boot/config-`uname -r` dot.config
@@ -107,7 +111,11 @@ cd ../obj/
 cd kgrafttmp
 make
 
-# To be documented later -> how to sign our own kGraft module
+# if a signed module is expected ... 
+# we copy the key files over here ... to shorten the command :-)
+cp ../../src/tools/kgraft/signing_key.* .
+# and now the signing
+./src/scripts/sign-file sha512 signing_key.priv signing_key.x509 kgrmodule.ko
 
 # Load the (hopefully) created kernel module
 insmod kgrmodule.ko
