@@ -115,7 +115,7 @@ make
 # we copy the key files over here ... to shorten the command :-)
 cp ../../src/tools/kgraft/signing_key.* .
 # and now the signing
-./src/scripts/sign-file sha512 signing_key.priv signing_key.x509 kgrmodule.ko
+../../src/scripts/sign-file sha512 signing_key.priv signing_key.x509 kgrmodule.ko
 
 # Load the (hopefully) created kernel module
 insmod kgrmodule.ko
