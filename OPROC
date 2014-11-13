@@ -2,6 +2,9 @@
 #
 git clone https://git.kernel.org/pub/scm/linux/kernel/git/jirislaby/kgraft.git
 cd kgraft && git checkout kgraft
+# The tools directory kgraft has gone in the recent 
+# versions of this fork ... we re-create for our needs
+[ -d tools/kgraft ] || mkdir -p tools/kgraft
 cd ..
 git clone git://sourceware.org/git/binutils.git
 cd binutils
@@ -13,11 +16,12 @@ cp binutils/binutils/objcopy kgraft/tools/kgraft/objcopy-hacked
 
 # To create your kGraft enabled kernel
 # MYVERSION=3.17.0-rc4+
-git clone https://git.kernel.org/pub/scm/linux/kernel/git/jirislaby/kgraft.git
-cd kgraft && git checkout kgraft
-# The tools directory kgraft has gone in the recent 
-# versions of this fork ... we re-create for our needs
-mkdir -p tools/kgraft
+#
+# The following 3 steps were already done above
+#git clone https://git.kernel.org/pub/scm/linux/kernel/git/jirislaby/kgraft.git
+#cd kgraft && git checkout kgraft
+#mkdir -p tools/kgraft
+#
 # and populate it with our tools
 cp create-kgrmodule.sh  create-stub.sh  extract-syms.sh objcopy.diff tools/kgraft
 # We will use this directory to store the object files ... is cleaner
@@ -45,6 +49,13 @@ make "O=../obj/" modules_install
 new-kernel-pkg --initrdfile=/boot/initramfs-$MYVERSION.img --install $MYVERSION
 # OR
 kernel-install add $MYVERSION /boot/vmlinuz-$MYVERSION
+#
+# if signing of kernel modules was configured we need to save
+# the key files used for this kernel build ... otherwise they 
+# will be overwritten with the next build which is part of the
+# process to create our own kGraft kernel module
+cp ../obj/signing_key.priv ../tools/kgraft/
+cp ../obj/signing_key.x509 ../tools/kgraft/
 
 # Create your own kGraft module
 # If the KCFLAGS="-ffunction-sections -fdata-sections" was not set for the initial
@@ -95,6 +106,8 @@ cd ../obj/
 # Once done ... just compile it again
 cd kgrafttmp
 make
+
+# To be documented later -> how to sign our own kGraft module
 
 # Load the (hopefully) created kernel module
 insmod kgrmodule.ko
